@@ -1,7 +1,9 @@
 import {quotes, users} from './fakedb.js';
 import {randomBytes} from 'crypto';
 import mongoose from 'mongoose';
-import {bcrypt} from 'bcryptjs';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from './config.js';
 
 const User = mongoose.model("User");
 
@@ -16,16 +18,32 @@ const resolvers = {
         quotes:(ur) => quotes.filter(quote => quote.by == ur._id)
     },
     Mutation: {
-        signupUser:(_,{ userNew }) => {
-           const user = User.findOne({email:userNew.email })
+        signupUser: async (_,{ userNew }) => {
+           const user = await User.findOne({email:userNew.email });
            if(user){
             throw new Error("User already exists with that email");
            }
-        //    const hashedPassword = await bcrypt.hash(userNew.password,12);
+           const hashedPassword = await bcrypt.hash(userNew.password,12);
 
-           new User({
-                
+          const newUser = new User({
+                ...userNew,
+                password:hashedPassword
            })
+           return await newUser.save()
+        },
+        signinUser: async (_,{ userSignin }) => {
+          //TODO
+          const user = await User.findOne({email:userSignin.email})
+          if(!user){
+            throw new Error("User Doesnt Exists with that email")
+          }
+          const doMatch = await bcrypt.compare(userSignin.password,user.password)
+          if(!doMatch){
+            throw new Error("email or password is incorrect");
+          }
+           const token = jwt.sign({userId:user._id},JWT_SECRET)
+            return {token}
+
         }
     }
 }

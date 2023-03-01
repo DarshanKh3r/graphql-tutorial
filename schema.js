@@ -26,13 +26,23 @@ type Quote {
     by: ID
 }
 
+type Token{
+    token:String
+}
+
 type Mutation {
     signupUser(userNew:UserInput!):User
+    signinUser(userSignin:UserSigninInput!):Token
 }
 
 input UserInput {
     firstName:String!
     lastName:String!
+    email:String!
+    password:String!
+}
+input UserSigninInput {
+
     email:String!
     password:String!
 }
